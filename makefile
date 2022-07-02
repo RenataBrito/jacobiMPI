@@ -3,13 +3,14 @@ all: seq par
 seq: jacobiseq.c
 	gcc -fopenmp jacobiseq.c -o execSeq
 
-par: jacobipar.c
-	gcc -fopenmp jacobipar.c -o execPar
+par: jacobi-mpi.c
+	mpicc jacobi-mpi.c -o execPar -fopenmp
 
 run-seq:
-	./execSeq 1000 1
+	./execSeq 100 1
 
 run-par:
-	./execPar 1000 2
+	./execPar 100 5 2
+
 
 
