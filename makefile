@@ -10,7 +10,8 @@ run-seq:
 	./execSeq 100 1
 
 run-par:
-	./execPar 100 5 2
+	mpirun –np 5 execPar
+
 
 
 
