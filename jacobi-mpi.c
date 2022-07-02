@@ -14,19 +14,24 @@
 #include <string.h>
 #include "mpi.h"
 #include "utils.h"
-#define MESSAGE "Hello World running!!!! " 
 
 
 int  main(int argc, char *argv[])  {
 	testArguments(argc);
-	int npes, myrank, src, dest, msgtag, ret;
-	char *bufrecv, *bufsend;
+	int npes, myrank, ret;
+
 	char processor_name[MPI_MAX_PROCESSOR_NAME];
 	int name_len;
-
+	
 	int i,j;
     int orderOfMatrix = atoi(argv[1]);
    	int numberOfThreads = atoi(argv[2]);
+	int *vetor_env, *vetor_rec, *vetor_recB;
+	vetor_env=(int*)malloc(orderOfMatrix*sizeof(int));
+    vetor_rec=(int*)malloc(orderOfMatrix*sizeof(int));
+	vetor_recB=(int*)malloc(orderOfMatrix*sizeof(int));
+
+	int matrix[3][3];
 
 	MPI_Status status;
 	MPI_Init(&argc, &argv);
@@ -34,57 +39,57 @@ int  main(int argc, char *argv[])  {
 	MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
 
 	MPI_Get_processor_name(processor_name, &name_len);
+    // Logica de separacao dos dados caso a divisao seja exata ou nao. (orderOfMatrix/Nprocess)
+	int proporcao = orderOfMatrix/npes;
+	if(proporcao == 0){
+		proporcao = 1; // TODO controlar DEPOIS que no máximo rank < order of matrix executem 
+	}
+	if( orderOfMatrix%npes != 0 ){
+		printf("\nOrdem da matriz tem que ser multiple de NProcessos.\n");
+		exit(EXIT_FAILURE);
+	}
 
-	bufrecv = (char *) malloc (strlen(MESSAGE)+12);
-   	msgtag = 1;
+    MPI_Barrier(MPI_COMM_WORLD);
 	if ( myrank == 0) {
-		printf("MPI Processes: %d \nMatrix Order: %d \nNumber of Threads: %d \n\n", npes, orderOfMatrix, numberOfThreads);
+		printf("\nMPI Processes: %d \nMatrix Order: %d \nNumber of Threads: %d \n\n", npes, orderOfMatrix, numberOfThreads);
         printf("There are %d processes.\n", npes);
-		printf("I am process %d from processor %s. Message with %d char. \n", myrank, processor_name, (int)strlen(MESSAGE));
-		
-		for (dest = 1; dest<npes; dest++)
-		  MPI_Send((void*)MESSAGE, strlen(MESSAGE)+1, MPI_CHAR, dest, msgtag, MPI_COMM_WORLD);
-		
-		msgtag = 2;
-		printf("Receiving msgs from slaves: ");
-		for (src = 1; src < npes; src++) {
-			MPI_Recv(bufrecv, strlen(MESSAGE)+12, MPI_CHAR, MPI_ANY_SOURCE, msgtag, MPI_COMM_WORLD, &status);
-			printf("(%d)", (int) strlen(bufrecv));
-		}
-		printf("\n");
+		printf("I am process %d from processor %s.\n", myrank, processor_name);
 
 		// Criacao da matriz de ordem N e do Vetor B
-		int matrix[3][3] = {
-       		{4, 2, 1},
-       		{1, 3, 1},
-       		{2, 3, 6}};
-  		int bVector[3] = {7, -8, 6};
-
-		//Matriz print
-		for(i=0;i<orderOfMatrix;i++){
-			for(j=0;j<orderOfMatrix;j++)
-				printf("%d ", matrix[i][j]);
-			printf("\n");
-		}
-		//bVector print
-		for(i=0; i<orderOfMatrix; i++)
-			printf("%d ", bVector[i]);
-
-	} else {
-		printf("\nThere are %d processes. I am process %d from processor %s.\n", npes, myrank, processor_name);
+		matrix[0][0] =4; 
+		matrix[0][1] =2;
+		matrix[0][2] =1;
+		matrix[1][0] =1;
+		matrix[1][1] =3;
+		matrix[1][2] =1;
+		matrix[2][0] =2;
+		matrix[2][1] =3;
+		matrix[2][2] =6;
 		
-		bufsend = (char *) malloc (strlen(MESSAGE)+12);
-		src = dest = 0;
-		MPI_Recv(bufrecv, strlen(MESSAGE)+1, MPI_CHAR, src, msgtag, MPI_COMM_WORLD, &status);
-		msgtag = 2;
-		sprintf(bufsend, "%s from %d", bufrecv, myrank);
-		MPI_Send(bufsend, strlen(bufsend)+1, MPI_CHAR, dest, msgtag, MPI_COMM_WORLD);
-		free(bufsend);
+  		int bVector[3] = {7, -8, 6};
+		vetor_env = bVector;
 	}
-	free(bufrecv);
-	fflush(0);
+
+	MPI_Scatter(matrix[0], orderOfMatrix*proporcao, MPI_INT, vetor_rec, orderOfMatrix, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Scatter(vetor_env, proporcao, MPI_INT, vetor_recB, proporcao, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Barrier(MPI_COMM_WORLD);
+	if( myrank < orderOfMatrix){
+		printf("\nThere are %d processes. I am process %d from processor %s.\n", npes, myrank, processor_name);
+	    printf("Received Values \n");
+	    for(i=0;i<orderOfMatrix;i++){
+		    printf("%d ", vetor_rec[i]);
+	    }
+	    printf("\n B Value: %d", vetor_recB[0]);
+	}
+
+	//free(bufrecv);
+	free(vetor_rec);
+    //free(vetor_env);
+
+	//fflush(0);
+
 	ret = MPI_Finalize();
 	if (ret == MPI_SUCCESS)
-		printf("\nMPI_Finalize success! \n");
+		printf("\nMPI_Finalize success!");
 	return(0);
 }
