@@ -7,8 +7,9 @@ Executar os binarios
 * make run-seq
 * make run-par
 
-Vale ressaltar que a ordem da matriz, o numero de processos e a quantidade de threads devera ser passado como argumento da execucao. 
-Como padrao estamos enviando a ordem da matriz 100, 5 processos e 2 threads para o paralelo. 
-Caso queira diferente deverá editar o makefile ou passar os parametros por exemplo:
-* ./execSeq 1000 1
-* ./execPar 1000 4 1
+Vale ressaltar que a ordem da matriz, o número de processos e a quantidade de threads deverá ser passado como argumento da execução do paralelo. 
+Como padrão estamos enviando a ordem da matriz 1000, 5 processos e 2 threads para o paralelo sendo executados nos hals de 02 a 06. 
+
+Caso queira passar argumentos diferentes deverá editar o makefile ou passar os parametros por exemplo:
+* ./execSeq 10000 1
+* mpirun -np 1 -host hal02,hal03,hal04,hal10 --oversubscribe ./jacobipar 10000 5 4
