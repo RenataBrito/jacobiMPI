@@ -3,16 +3,18 @@ Luis Eduardo Prado Santini 9065750
 Marianna Karenina de A. Flôres 10821144
 Renata Oliveira Brito 10373663
 */
-
-
+// para compilar: gcc jacobi-seq.c -o exec -fopenmp
+// para rodar: ./exec N T
+// sento N a ordem da matriz e T o numero de threads (que é ignorado pois é sequencial);
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include "utils.h"
 #include <omp.h>
 
-#define RAND_UPPER_BOUND 10
-#define RAND_LOWER_BOUND 0
+#define RAND_UPPER_BOUND 100
+#define RAND_UPPER_BOUND2 30
+#define RAND_LOWER_BOUND 10
 
 int main(int argc, char *argv[])
 {
@@ -34,6 +36,18 @@ int main(int argc, char *argv[])
       matrix[i]=malloc(orderOfMatrix*sizeof(*matrix[i]));
    }
 
+  // printf(" acaba de criar a matriz\n ");
+   // teste do prof
+   /*int matrix[3][3] = {
+       {4, 2, 1},
+       {1, 3, 1},
+       {2, 3, 6}};
+   int bVector[3] = {7, -8, 6};*/
+
+   // TODO tirar os prints
+   //printf("\n");
+   //printf("Matriz\n");
+
    for (i = 0; i < orderOfMatrix; i++)
    {
       lineSum[i] = 0;
@@ -45,11 +59,11 @@ int main(int argc, char *argv[])
       {
          if (i != j)
          {
-            matrix[i][j] = (rand() % (RAND_UPPER_BOUND - RAND_LOWER_BOUND + 1)) + RAND_LOWER_BOUND;
+            matrix[i][j] = (rand() % (RAND_UPPER_BOUND2 - RAND_LOWER_BOUND + 1)) + RAND_LOWER_BOUND;
             lineSum[i] = lineSum[i] + matrix[i][j];
          }
-         matrix[i][i] = (rand() % ((RAND_UPPER_BOUND + lineSum[i]) - RAND_LOWER_BOUND + 1)) + (lineSum[i] + 1); // posicao diagonal principal > soma dos outros elementos.
-         bVector[i] = (rand() % (RAND_UPPER_BOUND - RAND_LOWER_BOUND + 1)) + RAND_LOWER_BOUND;                  // vetor B do enunciado do problema.
+         matrix[i][i] = (rand() % ((RAND_UPPER_BOUND2 + lineSum[i]) - RAND_LOWER_BOUND + 1)) + (lineSum[i] + 1); // posicao diagonal principal > soma dos outros elementos.
+         bVector[i] = (rand() % ((int)0.1*lineSum[i] - RAND_LOWER_BOUND + 1)) + RAND_LOWER_BOUND;                  // vetor B do enunciado do problema.
       }
    }
 
@@ -57,7 +71,7 @@ int main(int argc, char *argv[])
    /************************** Criterio das Linhas ******************************** */
    tempoConvergencia = omp_get_wtime();
 
-   int lineCriteria = 1; 
+   int lineCriteria = 1;
    for (i = 0; i < orderOfMatrix; i++)
    {
       lineSum[i] = 0;
@@ -171,10 +185,20 @@ int main(int argc, char *argv[])
    printf("Total de iteracoes: %d\n", k);
    tempoIteracoes = omp_get_wtime() - tempoIteracoes;
 
-    
+
    printf("Tempo Sequencial Convergencia: %.5f segundos\n", tempoConvergencia);
    printf("Tempo Sequencial Iteracoes: %.5f segundos\n", tempoIteracoes);
    printf("Tempo total: %.5f segundos\n", (tempoConvergencia+tempoIteracoes));
+
+   int linhaEscolhida;
+   float resultadoFinal;
+   printf("\nEscolha a linha que será usada no teste do resultado: ");
+   scanf("%d", &linhaEscolhida);
+
+   for(i=0;i<orderOfMatrix;i++){
+      resultadoFinal+= matrix[linhaEscolhida][i] * currentResults[i];
+   }
+   printf("\nTemos: %.4f = %d\n",resultadoFinal,bVector[linhaEscolhida]);
 
    free(lineSum);
    free(colunmSum);
